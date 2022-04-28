@@ -194,9 +194,9 @@ def get_all_events(general_events_file, specific_event_file, all_events):
     d3.to_csv(all_events)
 
 if __name__ == '__main__':
-    #apply_regex_rules("C:\Research\\Note_Evaluation", "C:\Research\MIMIC_Exp\Test\\extracted_events.csv")
-    #extract_specific_notes("C:\Research\\Note_Evaluation", "C:\Research\MIMIC_Exp\Test\\specific_events.csv")
-    #refine_events("C:\Research\MIMIC_Exp\Test\\extracted_events.csv", "C:\\Research\MIMIC_Exp\\exclude_list.txt", "C:\\Research\MIMIC_Exp\\stopwords.txt", "C:\Research\MIMIC_Exp\Test\\refined_events.csv")
+    apply_regex_rules("C:\Research\\Note_Evaluation", "C:\Research\MIMIC_Exp\Test\\extracted_events.csv")
+    extract_specific_notes("C:\Research\\Note_Evaluation", "C:\Research\MIMIC_Exp\Test\\specific_events.csv")
+    refine_events("C:\Research\MIMIC_Exp\Test\\extracted_events.csv", "C:\\Research\MIMIC_Exp\\exclude_list.txt", "C:\\Research\MIMIC_Exp\\stopwords.txt", "C:\Research\MIMIC_Exp\Test\\refined_events.csv")
     get_all_events("C:\Research\MIMIC_Exp\Test\\refined_events.csv", "C:\Research\MIMIC_Exp\Test\\specific_events.csv", "C:\Research\MIMIC_Exp\Test\\all_events.csv")
 
 
