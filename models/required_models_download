@@ -1,0 +1,5 @@
+Download the following models and set the path
+Twitter_bigram - https://github.com/epfml/sent2vec#downloading-sent2vec-pre-trained-models
+wiki-bigram - https://github.com/epfml/sent2vec#downloading-sent2vec-pre-trained-models
+BioSentVec_PubMed_MIMICIII - https://github.com/ncbi-nlp/BioSentVec#biosentvec
+Bert 
