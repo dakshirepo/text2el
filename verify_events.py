@@ -94,7 +94,7 @@ def calcute_semantic_similarity(pre_trained_model_path, input_csv, semantic_simi
     d0.to_csv(semantic_similariy_csv)
 '''
 if __name__ == '__main__':
-    compare_events("C:\Research\MIMIC_Exp\Test\\all_events.csv", "C:\Research\MIMIC_Exp\Test\\event_log_evaluation.csv", "C:\Research\MIMIC_Exp\Test\matched_events.csv", "C:\Research\MIMIC_Exp\Test\\time_matched_events.csv")
+    compare_events("all_events.csv", "event_log_evaluation.csv", "matched_events.csv", "time_matched_events.csv")
     #calcute_semantic_similarity(pre_trained_model_path, "time_matched_events.csv", "semantic_similariy.csv")
     # pre_trained_model_path = "/BioSentVec_PubMed_MIMICIII-bigram_d700.bin"
     # pre_trained_model_path = "/wiki_bigrams.bin"
