@@ -40,10 +40,10 @@ def compare_events(extracted_events, eventlog_events, matched_events, time_match
 
     d1=d1.rename(columns ={'Activity':'extracted_Activity'})
     d2 =d2.rename(columns={'Activity': 'eventlog_Activity'})
-    d3o1 = d1.merge(d2, on=['HADM_ID', 'Date'])
     d3o2 = d1.merge(d2, on=['HADM_ID'])
     out=time_analysis(d3o2)
     out.to_csv(matched_events)
+    d3o1= d3o2[d3o2['Date Difference']=='0 days']
     d3o1.to_csv(time_matched_events)
 '''
 def calcute_semantic_similarity(pre_trained_model_path, input_csv, semantic_similariy_csv):
