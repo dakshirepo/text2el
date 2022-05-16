@@ -32,8 +32,7 @@ def compare_events(extracted_events, eventlog_events, matched_events, time_match
     d1=pd.read_csv(extracted_events)
     d2=pd.read_csv(eventlog_events)
 
-    d2['Timestamp'] = d2['Timestamp'].str.replace(re.escape("-"), '/')
-    d2['Timestamp'] = d2['Timestamp'].str.replace(re.escape("/0"), '/')
+    d1['Timestamp'] = d1['Timestamp'].str.lstrip()
 
     d1[['Date', 'Time']] = d1["Timestamp"].str.split(" ", expand=True, n=1)
     d2[['Date', 'Time']] = d2["Timestamp"].str.split(" ", expand=True, n=1)
