@@ -1,0 +1,5 @@
+Two datasets were used for the evaluation. 
+MIMIC-III dataset - is avaiable in https://physionet.org/content/mimiciii/1.4/ 
+                   "To access the data on the cloud, simply add the relevant cloud identifier to your PhysioNet profile. 
+                   Further instructions are available on the MIMIC-III website"
+Tweet dataset - is extracted from https://github.com/kechtel/ericsson
