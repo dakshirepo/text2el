@@ -1,4 +1,14 @@
+glob
+ntpath
 numpy==1.22.3
+os
 pandas==1.4.2
+pathlib
+PIL
 pm4py==2.2.19.1
+re
+scispacy
 spacy==3.2.4
+sys
+tkinter
+stanfordnlp.server
