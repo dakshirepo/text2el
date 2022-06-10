@@ -1,3 +1,4 @@
+cython
 gensim
 glob
 nltk
