@@ -48,7 +48,7 @@ def compare_events(extracted_events, eventlog_events, matched_events, time_match
 def calcute_semantic_similarity(pre_trained_model_path, input_csv, semantic_similariy_csv):
 
     lemmatizer = WordNetLemmatizer()
-
+    
     model_path =pre_trained_model_path
     model = sent2vec.Sent2vecModel()
     try:
@@ -75,6 +75,8 @@ def calcute_semantic_similarity(pre_trained_model_path, input_csv, semantic_simi
         return ' '.join(tokens)
 
     d0 = pd.read_csv(input_csv)
+    d0.dropna()
+    d0['extracted_Activity'] = d0['extracted_Activity'].str.strip()
 
     li = []
     for index, row in d0.iterrows():
