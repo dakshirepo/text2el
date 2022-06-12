@@ -75,6 +75,7 @@ def apply_regex_rules(collection_filepath, output_file1):
 
     df.to_csv(output_file1)
 
+#Extract events from event specific notes in MIMIC-III 
 def extract_specific_notes(collection_filepath, output_file2):
     folders = [f for f in listdir(collection_filepath)]
     df = pd.DataFrame()
