@@ -536,16 +536,3 @@ if __name__ == '__main__':
     dep_parse_attribute("extracted_notes_MIMIC-III_Evaluation", "all_dependency.csv")
     extract_case_attributes("all_dependency.csv", "all_attributes.csv", 'all_events.csv', "ase_attr_final.csv")
     extract_event_attributes("all_dependency.csv", "all_attributes.csv", 'specific_events.csv', 'all_events.csv', "event_attr_final.csv")
-
-
-
-
-
-
-
-
-
-    
-
-
-
