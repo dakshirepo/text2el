@@ -4,3 +4,6 @@ This repository contains the source code of the Text2EL prototype developed for 
 
 # Installation 
 Install the general and specialized python libraries mentioned in requirements.txt
+
+# Dataset description
+Details about the dataset are avaiable inside the data_description file.
