@@ -44,7 +44,7 @@ def compare_events(extracted_events, eventlog_events, matched_events, time_match
     out.to_csv(matched_events)
     d3o1= d3o2[d3o2['Date Difference']=='0 days']
     d3o1.to_csv(time_matched_events)
-'''
+
 def calcute_semantic_similarity(pre_trained_model_path, input_csv, semantic_similariy_csv):
 
     lemmatizer = WordNetLemmatizer()
@@ -93,12 +93,22 @@ def calcute_semantic_similarity(pre_trained_model_path, input_csv, semantic_simi
     #d0['Similarity_Bio'] = li
 
     d0.to_csv(semantic_similariy_csv)
-'''
+    
+def get_matched_events(semantic_similariy_csv, extracted_matched_events_csv):
+    d1= pd.read_csv(semantic_similariy_csv)
+    matched_events = d1.loc[d1.groupby(["HADM_ID","eventlog_Activity","Timestamp_y"])['Sim_Bio'].idxmax()].reset_index(drop=True)
+
+    # Bio threshld avg+ 2*std  = 0.295439
+    matched_events= matched_events[matched_events['Sim_Bio'] > 0.295439]
+    matched_events = matched_events.loc[matched_events.groupby(["HADM_ID","extracted_Activity","Timestamp_x"])['Sim_Bio'].idxmax()].reset_index(drop=True)
+    matched_events.to_csv(extracted_matched_events_csv)
+
 if __name__ == '__main__':
     compare_events("all_events.csv", "event_log_evaluation.csv", "matched_events.csv", "time_matched_events.csv")
     #calcute_semantic_similarity(pre_trained_model_path, "time_matched_events.csv", "semantic_similariy.csv")
     # pre_trained_model_path = "/BioSentVec_PubMed_MIMICIII-bigram_d700.bin"
     # pre_trained_model_path = "/wiki_bigrams.bin"
     # pre_trained_model_path = "/twitter_bigrams.bin"
+    get_matched_events("semantic_similariy.csv", "extracted_matched_events.csv")
 
 
