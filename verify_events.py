@@ -99,7 +99,7 @@ def calcute_semantic_similarity(pre_trained_model_path, input_csv, semantic_simi
 
     d0.to_csv(semantic_similariy_csv)
     
-def get_matched_events(semantic_similariy_csv, matched_events_csv):
+def get_matched_events(semantic_similariy_csv, matched_events_csv, timestamp_updated_csv):
     d1= pd.read_csv(semantic_similariy_csv)
     matched_events = d1.loc[d1.groupby(["HADM_ID","eventlog_Activity","Timestamp_y"])['Sim_Bio'].idxmax()].reset_index(drop=True)
 
@@ -107,6 +107,16 @@ def get_matched_events(semantic_similariy_csv, matched_events_csv):
     matched_events= matched_events[matched_events['Sim_Bio'] > 0.295439]
     matched_events = matched_events.loc[matched_events.groupby(["HADM_ID","extracted_Activity","Timestamp_x"])['Sim_Bio'].idxmax()].reset_index(drop=True)
     matched_events.to_csv(matched_events_csv)
+    
+    #Update timestamps
+    dis_charge= matched_events[(matched_events['Source_x'] == 'Discharge summary')]
+    event_specific = ['Radiology', 'Echo']
+    events = matched_events[matched_events['Source_x'].isin(event_specific)]
+    events['Timestamp_y'] = events['Timestamp_x']
+    
+    df=pd.DataFrame()
+    df=pd.concat([dis_charge, events])
+    df.to_csv(timestamp_updated_csv)
 
     
 def add_new_events(matched_events_csv, all_events_csv, event_log_csv, enhanced_log_csv):
@@ -144,7 +154,7 @@ if __name__ == '__main__':
     # pre_trained_model_path = "/BioSentVec_PubMed_MIMICIII-bigram_d700.bin"
     # pre_trained_model_path = "/wiki_bigrams.bin"
     # pre_trained_model_path = "/twitter_bigrams.bin"
-    get_matched_events("semantic_similariy.csv", "matched_events.csv")
+    get_matched_events("semantic_similariy.csv", "matched_events.csv", "timestamp_updated_csv")
     add_new_events("matched_events.csv", "all_events.csv", "event_log.csv", "enhanced_log.csv")
     convert_csv_xes('eventlog.csv', 'eventlog_xes')
 
