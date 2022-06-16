@@ -7,3 +7,7 @@ Install the general and specialized python libraries mentioned in requirements.t
 
 # Dataset description
 Details about the dataset are avaiable inside the data_description file.
+
+# Phase 1: Events and attributes extraction 
+extract_events_attributes.py extracts the events and attributes from extracted notes in the MIMIC-III dataset. 
+
