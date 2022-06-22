@@ -123,7 +123,7 @@ def add_new_events(matched_events_csv, all_events_csv, event_log_csv, enhanced_l
     d1= pd.read_csv(matched_events_csv)
     d2= pd.read_csv(all_events_csv)
     d3= pd.read_csv(event_log_csv)
-    d4= pd.read_csv(enhanced_log_csv)
+    
     
     d2["Activity"]=d2["Activity"].str.lower()
     d1["Activity"]=d1["Activity"].str.lower()
