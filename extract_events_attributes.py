@@ -151,7 +151,9 @@ def extract_specific_notes(collection_filepath, output_file2):
     df = df.dropna()
     df = df[df.Activity != '']
     df.to_csv(output_file2)
-
+    
+    
+#Refine the extracted events by excluding the activities which can’t be events     
 def refine_events(input_csv, exclude_list, stopword_list, output_csv):
     d = pd.read_csv(input_csv)
     f1 = open(exclude_list , "r")
@@ -191,6 +193,7 @@ def refine_events(input_csv, exclude_list, stopword_list, output_csv):
 
     out_df.to_csv(output_csv)
 
+#merge all events, events extracted from the event-specific notes and case notes
 def get_all_events(general_events_file, specific_event_file, all_events):
     d1=pd.read_csv(general_events_file)
     d2=pd.read_csv(specific_event_file)
@@ -218,6 +221,7 @@ def preprocess(doc):
     return [token for token in simple_preprocess(doc, min_len=0, max_len=float("inf")) if token not in stopwords]
 
 
+#Apply Named Entity Recognition and lookup list tagging 
 def tag_NER_lookup(filepath, lookup_p1, lookup_p2, out_csv):
     
     nlp = spacy.load("en_core_sci_lg")
@@ -358,7 +362,7 @@ def tag_NER_lookup(filepath, lookup_p1, lookup_p2, out_csv):
     df_uni.to_csv(outputfile)
     outputfile.close()
 
-
+#apply dependency parsing and extract attributes  
 def dep_parse_attribute(filepath, out_dep_csv):
     df = pd.DataFrame()
     case_id = []
