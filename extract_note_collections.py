@@ -1,6 +1,7 @@
 import pandas as pd
 import os
 
+#Extract the notes related to patients admitted during 01-01-2100 – 01-01-2101  
 def extract_notes(admission_csv, noteevents_csv, path_to_collection):
     d1=pd.read_csv(admission_csv)
     d2=pd.read_csv(noteevents_csv)
