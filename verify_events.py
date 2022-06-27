@@ -14,7 +14,7 @@ from pm4py.objects.log.util import dataframe_utils
 from pm4py.objects.conversion.log import converter as log_converter
 from pm4py.objects.log.exporter.xes import exporter as xes_exporter
 
-
+#Convert the timestamps into a standard DateTime format and measure the difference between event log timestamp and extracted timestamp 
 def time_analysis(df):
     p1 = df
     p1['Date_x'] = pd.to_datetime(p1['Date_x'])
@@ -33,6 +33,7 @@ def time_analysis(df):
     p1['Time_x'] = p1['Time_x'].replace("AM", "")
     return p1
 
+#Find time-matched events 
 def compare_events(extracted_events, eventlog_events, matched_events, time_matched_events):
     d1=pd.read_csv(extracted_events)
     d2=pd.read_csv(eventlog_events)
@@ -50,6 +51,7 @@ def compare_events(extracted_events, eventlog_events, matched_events, time_match
     d3o1= d3o2[d3o2['Date Difference']=='0 days']
     d3o1.to_csv(time_matched_events)
 
+#Calcuate the semantic similarity using different pre-trained models
 def calcute_semantic_similarity(pre_trained_model_path, input_csv, semantic_similariy_csv):
 
     lemmatizer = WordNetLemmatizer()
@@ -98,7 +100,8 @@ def calcute_semantic_similarity(pre_trained_model_path, input_csv, semantic_simi
     #d0['Similarity_Bio'] = li
 
     d0.to_csv(semantic_similariy_csv)
-    
+
+#Find matched events by applying thresholds and update timestamps 
 def get_matched_events(semantic_similariy_csv, matched_events_csv, timestamp_updated_csv):
     d1= pd.read_csv(semantic_similariy_csv)
     matched_events = d1.loc[d1.groupby(["HADM_ID","eventlog_Activity","Timestamp_y"])['Sim_Bio'].idxmax()].reset_index(drop=True)
@@ -118,7 +121,7 @@ def get_matched_events(semantic_similariy_csv, matched_events_csv, timestamp_upd
     df=pd.concat([dis_charge, events])
     df.to_csv(timestamp_updated_csv)
 
-    
+#Add new events to the event log    
 def add_new_events(matched_events_csv, all_events_csv, event_log_csv, enhanced_log_csv):
     d1= pd.read_csv(matched_events_csv)
     d2= pd.read_csv(all_events_csv)
@@ -136,7 +139,8 @@ def add_new_events(matched_events_csv, all_events_csv, event_log_csv, enhanced_l
     enh_event_log = pd.concat([d3, result])
 
     enh_event_log.to_csv(enhanced_log_csv)
-    
+
+#Convert .csv into .xes event log format
 def convert_csv_xes(eventlog_csv, eventlog_xes):
     log_csv = pd.read_csv(eventlog_csv)
     log_csv.rename(columns = {'HADM_ID':'case:concept:name', 'Activity':'concept:name', 'Timestamp':'time:timestamp'}, inplace = True)
