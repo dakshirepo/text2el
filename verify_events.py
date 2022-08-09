@@ -1,7 +1,7 @@
 import re
 import pandas as pd
 import sent2vec
-
+import numpy as np
 from nltk import word_tokenize
 
 from string import punctuation
@@ -150,7 +150,74 @@ def convert_csv_xes(eventlog_csv, eventlog_xes):
     event_log = log_converter.apply(log_csv)
 
     xes_exporter.apply(event_log, eventlog_xes)
-    
+
+ def analyse_attr(all_case_att_csv, all_event_att_csv, case_attr_analysis, event_attr_analysis):
+    d1= pd.read_csv(all_case_att_csv)
+    d2= pd.read_csv(all_event_att_csv)
+    case_count = d1[['HADM_ID']].drop_duplicates(keep="first")
+    d1['Entity']=d1['Entity'].str.lower()
+    d1 = d1.groupby(['Entity'])['HADM_ID'].agg(['count', 'nunique'])
+    d1['filter_c_counts']= d1['nunique']/len(case_count)
+    d1 = d1[d1['filter_c_counts'] > 0.5]
+    d1.to_csv(case_attr_analysis)
+    d2['Entity']=d2['Entity'].str.lower()
+    d2 = d2.groupby(['Entity'])['HADM_ID'].agg(['count', 'nunique'])
+    d2['filter_e_counts']= d2['nunique']/len(case_count)
+    d2 = d2[d2['filter_e_counts'] > 0.5]
+    d2.to_csv(event_attr_analysis)
+
+def merge_attributes(all_case_att_csv, all_event_att_csv,  list_case_attributes):
+    d1 = pd.read_csv(all_case_att_csv)
+    d2 = pd.read_csv(all_event_att_csv)
+
+
+    final_filtered_attr = ["service", "sex", "date of birth"]
+
+    d1 = d1[['HADM_ID', 'Entity', 'Value']]
+    d1=d1.drop_duplicates(keep='first')
+    event_merge = d1.groupby(['HADM_ID', 'Entity'], as_index=False).agg(list)
+
+    out_df_f = event_merge[~event_merge['Entity'].str.lower().isin([x.lower() for x in final_filtered_attr])]
+
+    out_merg_f = event_merge[event_merge['Entity'].str.lower().isin([x.lower() for x in final_filtered_attr])]
+    out_merg_f = out_merg_f[['HADM_ID', 'Entity', 'Value']]
+    out_df_f = out_df_f.groupby('HADM_ID').apply(lambda x: dict(zip(x['Entity'], x['Value']))).reset_index().rename(
+        columns={"HADM_ID": "HADM_ID", 0: "Medical Info"})
+
+    out_df_ff = out_df_f.melt(id_vars="HADM_ID")
+    out_df_ff = out_df_ff.rename(columns={'variable': 'Entity', 'value': 'Value'})
+
+    out_df_f = pd.concat([out_df_ff, out_merg_f])
+    out_df_f.to_csv(list_case_attributes)
+
+
+
+def compare_case_attributes(Original_case_attr, case_att_csv):
+    d1=pd.read_csv(Original_case_attr)
+    d2=pd.read_csv(case_att_csv)
+
+    comp_attr_list=['Date of Birth', 'Sex']
+    comp_attr = d2[d2['Entity'].str.lower().isin([x.lower() for x in comp_attr_list])]
+    comp_attr=comp_attr[['HADM_ID', 'Entity', 'Value']]
+    comp_attr=comp_attr.pivot(index='HADM_ID', columns='Entity', values='Value')
+
+    new_df = d1.merge(comp_attr, on =["HADM_ID"])
+    new_df['Date of Birth'] = pd.to_datetime(new_df['Date of Birth'], utc=True)
+    #new_df[['Ex_Date', 'Ex_Time']] = new_df["Date of Birth"].str.split(" ", expand=True, n=1)
+    new_df['DOB'] = pd.to_datetime(new_df['DOB'], utc=True)
+    new_df['Date of Birth']=new_df['Date of Birth'].dt.date
+    new_df['DOB']=new_df['DOB'].dt.date
+    new_df['Date Difference'] = (new_df['DOB'] - new_df['Date of Birth']).abs()
+
+    gender_com = np.where(new_df["Sex"] == new_df["GENDER"], True, False)
+    new_df["gender_equal"] = gender_com
+
+    new_df['DOB']=new_df['Date of Birth']
+    new_df['GENDER']=new_df['Sex']
+
+    new_df=new_df[['HADM_ID', 'SUBJECT_ID','DOB', 'GENDER']]
+    new_df.to_csv(case_att_csv)
+
     
 if __name__ == '__main__':
     compare_events("all_events.csv", "event_log_evaluation.csv", "matched_events.csv", "time_matched_events.csv")
@@ -160,6 +227,9 @@ if __name__ == '__main__':
     # pre_trained_model_path = "/twitter_bigrams.bin"
     get_matched_events("semantic_similariy.csv", "matched_events.csv", "timestamp_updated_csv")
     add_new_events("matched_events.csv", "all_events.csv", "event_log.csv", "enhanced_log.csv")
+    analyse_attr("Case_attributes.csv", "event_attributes.csv", "case_attr_analysis.csv", "event_attr_analysis.csv")
+    merge_attributes("Case_attributes.csv", "event_attributes.csv", "Case_attr_final.csv")
+    compare_case_attributes('case_attr_event_log.csv', "Case_attributes_final.csv")
     convert_csv_xes('eventlog.csv', 'eventlog_xes')
 
 
