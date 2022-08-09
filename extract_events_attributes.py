@@ -526,14 +526,151 @@ def extract_event_attributes( dependency_csv, extracted_attributes_csv, specific
     new_df=new_df.drop_duplicates(keep='first')
 
     new_df.to_csv(all_event_att_csv)
-    
+ 
+def extract_echo_event_attr(filepath, echo_events):
+
+    folders = [f for f in listdir(filepath)]
+    echo_event = pd.DataFrame()
+    c1 = 0
+    hadm_ID, activity, time, note, e_type, reason, diagnosis, indication, status, doppler, contrast, tecnical_quality, reason, admitting_diagnosis, reason_exam = [], [], [], [], [], [], [], [], [], [], [], [], [], [], []
+
+    for dir in folders:
+
+        for f in glob.glob(filepath + '\\' + dir + "\\*Echo.txt"):
+            with open(f, "r+") as inputfile:
+                # print(f)
+                c1 = c1 + 1
+                con = inputfile.read()
+                x = con.split("\n")
+
+                pattern1 = re.compile(r"Date/Time:(.*)")
+                pattern2 = re.compile(r"Test:(.*)")
+                p3 = re.compile(r"Indication:(.*)")
+                p4 = re.compile(r"Doppler:(.*)")
+                p5 = re.compile(r"Contrast:(.*)")
+                p6 = re.compile(r"Technical Quality:(.*)")
+                p7 = re.compile(r"Status:(.*)")
+                m1 = pattern1.findall(con)
+                m2 = pattern2.findall(con)
+                m3 = p3.findall(con)
+                m4 = p4.findall(con)
+                m5 = p5.findall(con)
+                m6 = p6.findall(con)
+                m7 = p7.findall(con)
+
+                hadm_ID.append(dir)
+                activity.append(m2)
+                time.append(m1)
+                note.append(os.path.basename(f))
+                indication.append(m3)
+                doppler.append(m4)
+                contrast.append(m5)
+                tecnical_quality.append(m6)
+                status.append(m7)
+
+    echo_event["HADM_ID"] = hadm_ID
+    echo_event['Activity'] = activity
+    echo_event['Timestamp'] = time
+    echo_event['Type'] = "Echo"
+    echo_event['Note'] = note
+    echo_event["Indication"] = indication
+    echo_event["Doppler"] = doppler
+    echo_event["Contrast"] = contrast
+    echo_event["Technical Quality"] = tecnical_quality
+    echo_event["Status"] = status
+    echo_event.to_csv(echo_events)
+
+def extract_radiology_event_attr(filepath, radio_events):
+    folders = [f for f in listdir(filepath)]
+    radio_event=pd.DataFrame()
+    c2=0
+    hadm_ID, activity, time, note, e_type, reason, diagnosis, indication, status, doppler, contrast, tecnical_quality, reason, admitting_diagnosis, reason_exam = [], [], [], [], [], [], [], [], [], [], [], [], [], [], []
+
+    for dir in folders:
+        for f in glob.glob(filepath + '\\' + dir + "\\*Radiology.txt"):
+            with open(f, "r+") as inputfile:
+                con3 = inputfile.read()
+                x = con3.split("\n")
+                con2 = inputfile.readlines()
+
+                c2 = c2 + 1
+                n1 = x[:1]
+                n1 = str(n1).replace("['", "")
+                n1 = str(n1).replace("]", "")
+
+                n2 = x[1]
+
+                pattern3a = re.compile(r'(.*)Clip \# \[\*\*Clip Number')
+                pattern3b = re.compile(r'(.*)\[\*\*Name')
+                mm = pattern3a.findall(n2)
+                mm2 = pattern3b.findall(n2)
+                mm = str(mm).replace("['", "")
+                mm = str(mm).replace("']", "")
+                mm = str(mm).replace(") ", ")")
+                mm = re.sub('\s+', " ", mm)
+                mm = re.sub("[\[].*?[\]]", "", mm)
+                v = str(mm) + str(mm2)
+                # print(v)
+
+                p3 = re.compile(r"Reason:(.*)")
+                p4 = re.compile(r"Admitting Diagnosis:(.*)")
+                m3 = p3.findall(con3)
+                m4 = p4.findall(con3)
+                hadm_ID.append(dir)
+                activity.append(v)
+                time.append(n1)
+                note.append(os.path.basename(f))
+                reason.append(m3)
+                diagnosis.append(m4)
+
+    radio_event["HADM_ID"] = hadm_ID
+    radio_event['Activity'] = activity
+    radio_event['Timestamp'] = time
+    radio_event['Type'] = "Radiology"
+    radio_event["Reason"]=reason
+    radio_event["Admitting Diagnosis"]= diagnosis
+    radio_event["Note"]=note
+    radio_event.to_csv(radio_events)
+
+def extract_event_attr_event_notes(echo_events, radiology_notes, all_event_attr_csv, final_event_attributes):
+    echo_df = pd.read_csv(echo_events)
+    radio_df = pd.read_csv(radiology_notes)
+    f_event_df = pd.concat([echo_df, radio_df])
+    f_event_df.dropna()
+    f_event_df = f_event_df.drop('Unnamed: 0', axis=1)
+    f_event_df = f_event_df.melt(id_vars=["HADM_ID", "Activity", "Timestamp" , "Note", "Type"])
+    f_event_df = f_event_df.rename(columns={'variable': 'Entity', 'value': 'Value'})
+    #f_event_df=f_event_df.set_index(['HADM_ID',"Activity", "Timestamp" , "Note", "Type" ]).stack()
+    #f_event_df.to_csv("C:\Research\Text2EL\MIMIC_Exp\Test\\merged_events.csv")
+    extracted_event_attr=pd.read_csv(all_event_attr_csv)
+    #print(extracted_event_attr.info())
+    extracted_event_attr = extracted_event_attr[['HADM_ID', 'Activity', 'Timestamp','Entity', 'Value']]
+    event_merge = extracted_event_attr.groupby(['HADM_ID', 'Activity', 'Timestamp','Entity'], as_index=False).agg(list)
+    #event_merge.to_csv("C:\Research\Text2EL\MIMIC_Exp\Test\\ex_events_1.csv")
+    out_df_f = event_merge.groupby(['HADM_ID','Activity','Timestamp']).apply(lambda x: dict(zip(x['Entity'], x['Value']))).reset_index().rename(
+        columns={"HADM_ID": "HADM_ID", 0: "Medical Info"})
+
+    out_df_ff = out_df_f.melt(id_vars=["HADM_ID",'Activity','Timestamp'])
+    out_df_ff = out_df_ff.rename(columns={'variable': 'Entity', 'value': 'Value'})
+    ff_event_df=pd.concat([f_event_df, out_df_ff])
+    ff_event_df=ff_event_df[ff_event_df['Value'].notna()]
+    # to group the event attributes and get all into a list.
+    #ff_event_df=ff_event_df.groupby(['HADM_ID','Activity','Timestamp'])['Entity',  'Value'].agg(list)
+
+    ff_event_df.to_csv(final_event_attributes)
+
     
 if __name__ == '__main__':
-    apply_regex_rules("extracted_notes_MIMIC-III_Evaluation", "extracted_events.csv")
-    extract_specific_notes("extracted_notes_MIMIC-III_Evaluation", "specific_events.csv")
+    apply_regex_rules("extracted_notes_MIMIC-III_Evaluation\\", "extracted_events.csv")
+    extract_specific_notes("extracted_notes_MIMIC-III_Evaluation\\", "specific_events.csv")
     refine_events("extracted_events.csv", "text2el\models\\exclude_list.txt", "text2el\models\\stopwords.txt", "refined_events.csv")
     get_all_events("refined_events.csv", "Cspecific_events.csv", "all_events.csv")
-    tag_NER_lookup("extracted_notes_MIMIC-III_Evaluation", 'lookup_hospital_activity.txt' , 'lookup_medical_activity.txt', 'all_attributes.csv')
-    dep_parse_attribute("extracted_notes_MIMIC-III_Evaluation", "all_dependency.csv")
+    tag_NER_lookup("extracted_notes_MIMIC-III_Evaluation\\", 'lookup_hospital_activity.txt' , 'lookup_medical_activity.txt', 'all_attributes.csv')
+    dep_parse_attribute("extracted_notes_MIMIC-III_Evaluation\\", "all_dependency.csv")
     extract_case_attributes("all_dependency.csv", "all_attributes.csv", 'all_events.csv', "ase_attr_final.csv")
     extract_event_attributes("all_dependency.csv", "all_attributes.csv", 'specific_events.csv', 'all_events.csv', "event_attr_final.csv")
+    extract_echo_event_attr("extracted_notes_MIMIC-III_Evaluation\\", "echo_events.csv")
+    extract_radiology_event_attr("extracted_notes_MIMIC-III_Evaluation\\", "radio_events.csv")
+    extract_event_attr_event_notes("echo_events.csv", "radio_events.csv","event_attr_final_f.csv", "final_event_attr.csv" )
+
+
