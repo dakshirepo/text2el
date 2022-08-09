@@ -91,7 +91,7 @@ def extract_specific_notes(collection_filepath, output_file2):
                 pattern1 = re.compile(r"Date/Time:(.*)")
                 pattern2 = re.compile(r"Test:(.*)")
 
-                rem_characters= ["['","']", "at"]
+                rem_characters = ["['", "']", "at"]
                 m1 = pattern1.findall(con)
                 m2 = pattern2.findall(con)
 
@@ -134,7 +134,6 @@ def extract_specific_notes(collection_filepath, output_file2):
                 mm1 = re.sub('\s+', " ", mm1)
                 mm1 = re.sub("[\[].*?[\]]", "", mm1)
 
-
                 table1["HADM_ID"].append(dir)
                 table1["Activity"].append(mm + mm1)
                 table1["Timestamp"].append(m)
@@ -144,14 +143,12 @@ def extract_specific_notes(collection_filepath, output_file2):
 
     df = df[["HADM_ID", "Activity", "Timestamp", "Note"]]
     df = df.dropna()
-    df['Note'] = df['Note'].str.replace('^[^a-zA-Z]*', '')
-    df['Note'] = df['Note'].str.replace('.txt', '')
+
 
     df = df.drop_duplicates(keep='first')
     df = df.dropna()
     df = df[df.Activity != '']
     df.to_csv(output_file2)
-    
     
 #Refine the extracted events by excluding the activities which can’t be events     
 def refine_events(input_csv, exclude_list, stopword_list, output_csv):
