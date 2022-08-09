@@ -70,7 +70,7 @@ def apply_regex_rules(collection_filepath, output_file1):
     df["HADM_ID"] = caseID
     df['Activity'] = activity
     df['Timestamp'] = time
-    df['Source']="Discharge summary"
+    df['Note']="Discharge summary"
 
 
     df.to_csv(output_file1)
@@ -80,7 +80,7 @@ def extract_specific_notes(collection_filepath, output_file2):
     folders = [f for f in listdir(collection_filepath)]
     df = pd.DataFrame()
 
-    table1 = {"HADM_ID": [], "Activity": [], "Timestamp": [], "Source": []}
+    table1 = {"HADM_ID": [], "Activity": [], "Timestamp": [], "Note": []}
     for dir in folders:
 
         for f in glob.glob(collection_filepath + '\\' + dir + "\\*Echo.txt"):
@@ -102,7 +102,7 @@ def extract_specific_notes(collection_filepath, output_file2):
                 table1["HADM_ID"].append(dir)
                 table1["Activity"].append(m2)
                 table1["Timestamp"].append(m1)
-                table1["Source"].append(os.path.basename(f))
+                table1["Note"].append(os.path.basename(f))
 
         for f in glob.glob(collection_filepath + '\\' + dir + "\\*Radiology.txt"):
             with open(f, "r+") as inputfile:
@@ -138,14 +138,14 @@ def extract_specific_notes(collection_filepath, output_file2):
                 table1["HADM_ID"].append(dir)
                 table1["Activity"].append(mm + mm1)
                 table1["Timestamp"].append(m)
-                table1["Source"].append(os.path.basename(f))
+                table1["Note"].append(os.path.basename(f))
 
         df = df.append(pd.DataFrame(table1), ignore_index=True)
 
-    df = df[["HADM_ID", "Activity", "Timestamp", "Source"]]
+    df = df[["HADM_ID", "Activity", "Timestamp", "Note"]]
     df = df.dropna()
-    df['Source'] = df['Source'].str.replace('^[^a-zA-Z]*', '')
-    df['Source'] = df['Source'].str.replace('.txt', '')
+    df['Note'] = df['Note'].str.replace('^[^a-zA-Z]*', '')
+    df['Note'] = df['Note'].str.replace('.txt', '')
 
     df = df.drop_duplicates(keep='first')
     df = df.dropna()
@@ -197,8 +197,8 @@ def refine_events(input_csv, exclude_list, stopword_list, output_csv):
 def get_all_events(general_events_file, specific_event_file, all_events):
     d1=pd.read_csv(general_events_file)
     d2=pd.read_csv(specific_event_file)
-    d1=d1[["HADM_ID",	"Activity",	"Timestamp",	"Source"]]
-    d2 = d2[["HADM_ID", "Activity", "Timestamp", "Source"]]
+    d1=d1[["HADM_ID",	"Activity",	"Timestamp",	"Note"]]
+    d2 = d2[["HADM_ID", "Activity", "Timestamp", "Note"]]
 
     d3 = pd.concat([d1, d2])
 
@@ -342,7 +342,7 @@ def tag_NER_lookup(filepath, lookup_p1, lookup_p2, out_csv):
     df['HADM_ID']=case_id
     df['Entity']=attribute
     df['Value']=value
-    df['Source']=source
+    df['Note']=source
     df = df[df['Entity'].astype(str).str.len()>1]
     df['Entity']=df['Entity'].astype(str).str.replace('^[^a-zA-Z]*', '')
     
@@ -437,17 +437,17 @@ def dep_parse_attribute(filepath, out_dep_csv):
 
             df['HADM_ID']=case_id
             df['Dependency']=dep_p
-            df['Source']=source
+            df['Note']=source
 
             df = df.drop_duplicates()
 
-            n_df=df.groupby(['HADM_ID', 'Source'], as_index=False).agg({'Dependency': ' '.join})
+            n_df=df.groupby(['HADM_ID', 'Note'], as_index=False).agg({'Dependency': ' '.join})
             n_df.to_csv(out_dep_csv)
             
 
 def extract_case_attributes(dependenc_csv, extracted_attr_csv,all_events_csv, all_case_att_csv):
     d1=pd.read_csv(dependenc_csv)
-    d1=d1[d1['Source'].str.contains("Discharge summary")]
+    d1=d1[d1['Note'].str.contains("Discharge summary")]
     d2=pd.read_csv(extracted_case_csv)
     
     d3=pd.DataFrame()
@@ -466,7 +466,7 @@ def extract_case_attributes(dependenc_csv, extracted_attr_csv,all_events_csv, al
         d3['HADM_ID']= case_ls
         d3['Entity']=Entitiy_ls
         d3['Value']=value_ls
-    case_df=d2[d2['Source'].str.contains("Discharge summary.txt")]
+    case_df=d2[d2['Note'].str.contains("Discharge summary.txt")]
     df_e=pd.read_csv(all_events_csv)
     events_l = df_e['Activity'].drop_duplicates().to_list()
     exclude_l=['birth:  [', 'birth:  [' ,'admit' , 'discharge', 'Discharge Date', 'Date of Birth']
@@ -480,7 +480,7 @@ def extract_case_attributes(dependenc_csv, extracted_attr_csv,all_events_csv, al
  
     new_df=new_df[~new_df['Entity'].isin(exclude_v)]
     new_df=new_df.drop_duplicates(keep='first')
-    new_df=new_df[['HADM_ID','Entity', 'Value', 'Source']]
+    new_df=new_df[['HADM_ID','Entity', 'Value', 'Note']]
     new_df.to_csv(all_case_att_csv)
 
 
@@ -488,12 +488,12 @@ def extract_event_attributes( dependency_csv, extracted_attributes_csv, specific
 
     e_df1=pd.read_csv(dependency_csv)
     
-    e_df1['Source_edi']=e_df1['Source'].str.replace('^[^a-zA-Z]*', '')
+    e_df1['Source_edi']=e_df1['Note'].str.replace('^[^a-zA-Z]*', '')
     e_df1['Source_edi']=e_df1['Source_edi'].str.replace('.txt', '')
     #print(e_df1)
     event_notes=['Radiology' , 'Echo']
     e_df2=pd.read_csv(extracted_attributes_csv)
-    e_df2['Source_edi']=e_df2['Source'].str.replace('^[^a-zA-Z]*', '')
+    e_df2['Source_edi']=e_df2['Note'].str.replace('^[^a-zA-Z]*', '')
     e_df2['Source_edi']=e_df2['Source_edi'].str.replace('.txt', '')
     e_df1 = e_df1[e_df1['Source_edi'].isin(event_notes)]
     #print(e_df2)
@@ -523,8 +523,8 @@ def extract_event_attributes( dependency_csv, extracted_attributes_csv, specific
     #print(new_df)
     new_df.dropna()
     e_df3=pd.read_csv(specific_events_csv)
-    new_df=new_df.merge(e_df3, on=["Source", 'HADM_ID'])
-    new_df = new_df[['HADM_ID','Activity', 'Timestamp', 'Entity', 'Value', "Source"]]
+    new_df=new_df.merge(e_df3, on=["Note", 'HADM_ID'])
+    new_df = new_df[['HADM_ID','Activity', 'Timestamp', 'Entity', 'Value', "Note"]]
 
     new_df=new_df.drop_duplicates(keep='first')
 
