@@ -355,7 +355,7 @@ def tag_NER_lookup(filepath, lookup_p1, lookup_p2, out_csv):
     df_uni=df_uni.dropna()
     
 
-    df_uni=d1.drop_duplicates( keep='first')
+    df_uni=df_uni.drop_duplicates( keep='first')
     df_uni.to_csv(outputfile)
     outputfile.close()
 
