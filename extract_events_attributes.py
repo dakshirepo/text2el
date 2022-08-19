@@ -142,11 +142,11 @@ def extract_specific_notes(collection_filepath, output_file2):
         df = df.append(pd.DataFrame(table1), ignore_index=True)
 
     df = df[["HADM_ID", "Activity", "Timestamp", "Note"]]
-    df = df.dropna()
+    df = df.dropna(how='all')
 
 
     df = df.drop_duplicates(keep='first')
-    df = df.dropna()
+
     df = df[df.Activity != '']
     df.to_csv(output_file2)
     
@@ -164,18 +164,18 @@ def refine_events(input_csv, exclude_list, stopword_list, output_csv):
     d['Activity'] = d['Activity'].str.rstrip(',')
     d['Activity'] = d['Activity'].str.lstrip(',')
 
-    for j in suffix_list:
-        d['Activity'] = d['Activity'].str.removesuffix(j)
+    #for j in suffix_list:
+      #  d['Activity'] = d['Activity'].str.removesuffix(j)
 
 
     d['Activity'] = d['Activity'].str.replace('^[^a-zA-Z]*', '')
     d['Activity'] = d['Activity'].str.replace('^and*', '')
 
     d = d[d['Activity'].str.len() > 0]
-    d = d.dropna()
+  
 
     out_df = d[~d['Activity'].str.lower().isin([x.lower() for x in w_list])]
-    f2 = open(stopword_list, "r")
+    '''f2 = open(stopword_list, "r")
     among_list = f2.readlines()
     rem=str.maketrans('', '', '\n')
     b=[s.translate(rem) for s in among_list]
@@ -183,11 +183,11 @@ def refine_events(input_csv, exclude_list, stopword_list, output_csv):
     n_l = []
     for i in b:
         out_df['Activity'] = out_df['Activity'].str.replace(re.escape(i),'')
-
-    out_df.dropna()
+    '''
+    out_df= out_df.dropna(how='all')
     out_df['Activity'] = out_df['Activity'].str.replace('^[^a-zA-Z]*', '')
     out_df = out_df[out_df['Activity'].str.len() > 0]
-
+    out_df=out_df[~out_df['Activity'].str.lower().isin([x.lower() for x in suffix_list])]
     out_df.to_csv(output_csv)
 
 #merge all events, events extracted from the event-specific notes and case notes
@@ -472,31 +472,29 @@ def extract_case_attributes(dependenc_csv, extracted_attr_csv,all_events_csv, al
       
 
     new_df = pd.concat([case_df , d3])
-    new_df.dropna()
+  
     new_df = new_df[~new_df['Value'].isin(exclude_l)]
  
     new_df=new_df[~new_df['Entity'].isin(exclude_v)]
     new_df=new_df.drop_duplicates(keep='first')
+    new_df=new_df[new_df['Value'].notna()]
+    new_df=new_df[new_df['Entity'].notna()]
+    new_df=new_df.dropna(how='all')
     new_df=new_df[['HADM_ID','Entity', 'Value', 'Note']]
     new_df.to_csv(all_case_att_csv)
 
 
 def extract_event_attributes( dependency_csv, extracted_attributes_csv, specific_events_csv, all_events_csv, all_event_att_csv ):
 
+    d3=pd.DataFrame()
+
+    ''' extract from dependency_csv
     e_df1=pd.read_csv(dependency_csv)
-    
     e_df1['Source_edi']=e_df1['Note'].str.replace('^[^a-zA-Z]*', '')
     e_df1['Source_edi']=e_df1['Source_edi'].str.replace('.txt', '')
     #print(e_df1)
-    event_notes=['Radiology' , 'Echo']
-    e_df2=pd.read_csv(extracted_attributes_csv)
-    e_df2['Source_edi']=e_df2['Note'].str.replace('^[^a-zA-Z]*', '')
-    e_df2['Source_edi']=e_df2['Source_edi'].str.replace('.txt', '')
-    e_df1 = e_df1[e_df1['Source_edi'].isin(event_notes)]
-    #print(e_df2)
-    e_df2 = e_df2[e_df2['Source_edi'].isin(event_notes)]
-    #print(e_df2)
-    d3=pd.DataFrame()
+    
+    
     Entitiy_ls =[]
     value_ls=[]
     case_ls=[]
@@ -512,7 +510,16 @@ def extract_event_attributes( dependency_csv, extracted_attributes_csv, specific
         d3['HADM_ID']= case_ls
         d3['Entity']=Entitiy_ls
         d3['Value']=value_ls
+    e_df1 = e_df1[e_df1['Source_edi'].isin(event_notes)]
+    '''
+    event_notes=['Radiology' , 'Echo']
+    e_df2=pd.read_csv(extracted_attributes_csv)
+    e_df2['Source_edi']=e_df2['Note'].str.replace('^[^a-zA-Z]*', '')
+    e_df2['Source_edi']=e_df2['Source_edi'].str.replace('.txt', '')
     
+    #print(e_df2)
+    e_df2 = e_df2[e_df2['Source_edi'].isin(event_notes)]
+    #print(e_df2)
     df_e=pd.read_csv(all_events_csv)
     events_l = df_e['Activity'].drop_duplicates().to_list()
     e_df2 = e_df2[~e_df2['Value'].isin(events_l)]
@@ -655,22 +662,56 @@ def extract_event_attr_event_notes(echo_events, radiology_notes, all_event_attr_
     ff_event_df=pd.concat([f_event_df, out_df_ff])
     ff_event_df=ff_event_df[ff_event_df['Value'].notna()]
     # to group the event attributes and get all into a list.
-    #ff_event_df=ff_event_df.groupby(['HADM_ID','Activity','Timestamp'])['Entity',  'Value'].agg(list)
-
+    ff_event_df=ff_event_df.groupby(['HADM_ID','Activity','Timestamp'])['Entity',  'Value'].agg(list)
+    ff_event_df.dropna(inplace = True) 
     ff_event_df.to_csv(final_event_attributes)
-
     
+def merge_attributes(all_case_att_csv,  list_case_attributes):
+    d1 = pd.read_csv(all_case_att_csv)
+  
+    final_filtered_attr = ["service", "sex", "date of birth"]
+    d1["Value"]=d1["Value"].str.strip()
+    d1['Entity'] = d1['Entity'].str.strip()
+    d1["Value"]=d1["Value"].str.lstrip()
+    d1['Entity'] = d1['Entity'].str.lstrip()
+    d1 = d1[['HADM_ID', 'Entity', 'Value']]
+    d1=d1.drop_duplicates(keep='first')
+    event_merge = d1.groupby(['HADM_ID', 'Entity'], as_index=False).agg(list)
+
+    out_df_f = event_merge[~event_merge['Entity'].str.lower().isin([x.lower() for x in final_filtered_attr])]
+
+    out_merg_f = event_merge[event_merge['Entity'].str.lower().isin([x.lower() for x in final_filtered_attr])]
+    out_merg_f = out_merg_f[['HADM_ID', 'Entity', 'Value']]
+    out_df_f = out_df_f.groupby('HADM_ID').apply(lambda x: dict(zip(x['Entity'], x['Value']))).reset_index().rename(
+        columns={"HADM_ID": "HADM_ID", 0: "Medical Info"})
+
+    out_df_ff = out_df_f.melt(id_vars="HADM_ID")
+    out_df_ff = out_df_ff.rename(columns={'variable': 'Entity', 'value': 'Value'})
+    
+    out_df_f = pd.concat([out_df_ff, out_merg_f])
+    out_df_f.to_csv(list_case_attributes)
+
+def delete_garbage_files():
+    file_list=["./output1.csv", "./specific_events.csv", "./all_events.csv", "./all_attributes.csv" , "./echo_events.csv","./radio_events.csv","./case_attr_final.csv", "./event_attr_final.csv" ]
+    for i in file_list:
+        if(os.path.exists(i) and os.path.isfile(i)):
+            os.remove(i)
+            print("file deleted")
+
+
 if __name__ == '__main__':
-    apply_regex_rules("extracted_notes_MIMIC-III_Evaluation\\", "extracted_events.csv")
+    apply_regex_rules("extracted_notes_MIMIC-III_Evaluation\\", ".extracted_events.csv")
     extract_specific_notes("extracted_notes_MIMIC-III_Evaluation\\", "specific_events.csv")
     refine_events("extracted_events.csv", "text2el\models\\exclude_list.txt", "text2el\models\\stopwords.txt", "refined_events.csv")
     get_all_events("refined_events.csv", "Cspecific_events.csv", "all_events.csv")
     tag_NER_lookup("extracted_notes_MIMIC-III_Evaluation\\", 'lookup_hospital_activity.txt' , 'lookup_medical_activity.txt', 'all_attributes.csv')
     dep_parse_attribute("extracted_notes_MIMIC-III_Evaluation\\", "all_dependency.csv")
-    extract_case_attributes("all_dependency.csv", "all_attributes.csv", 'all_events.csv', "ase_attr_final.csv")
+    extract_case_attributes("all_dependency.csv", "all_attributes.csv", 'all_events.csv', "case_attr_final.csv")
     extract_event_attributes("all_dependency.csv", "all_attributes.csv", 'specific_events.csv', 'all_events.csv', "event_attr_final.csv")
     extract_echo_event_attr("extracted_notes_MIMIC-III_Evaluation\\", "echo_events.csv")
     extract_radiology_event_attr("extracted_notes_MIMIC-III_Evaluation\\", "radio_events.csv")
-    extract_event_attr_event_notes("echo_events.csv", "radio_events.csv","event_attr_final_f.csv", "final_event_attr.csv" )
+    extract_event_attr_event_notes("echo_events.csv", "radio_events.csv","event_attr_final_f.csv", "final_event_attr_list.csv" )
+    merge_attributes("case_attr_final.csv", "case_attr_final_list.csv")
+    delete_garbage_files()
 
 
