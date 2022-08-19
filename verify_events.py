@@ -166,30 +166,6 @@ def convert_csv_xes(eventlog_csv, eventlog_xes):
     d2 = d2[d2['filter_e_counts'] > 0.5]
     d2.to_csv(event_attr_analysis)
 
-def merge_attributes(all_case_att_csv, all_event_att_csv,  list_case_attributes):
-    d1 = pd.read_csv(all_case_att_csv)
-    d2 = pd.read_csv(all_event_att_csv)
-
-
-    final_filtered_attr = ["service", "sex", "date of birth"]
-
-    d1 = d1[['HADM_ID', 'Entity', 'Value']]
-    d1=d1.drop_duplicates(keep='first')
-    event_merge = d1.groupby(['HADM_ID', 'Entity'], as_index=False).agg(list)
-
-    out_df_f = event_merge[~event_merge['Entity'].str.lower().isin([x.lower() for x in final_filtered_attr])]
-
-    out_merg_f = event_merge[event_merge['Entity'].str.lower().isin([x.lower() for x in final_filtered_attr])]
-    out_merg_f = out_merg_f[['HADM_ID', 'Entity', 'Value']]
-    out_df_f = out_df_f.groupby('HADM_ID').apply(lambda x: dict(zip(x['Entity'], x['Value']))).reset_index().rename(
-        columns={"HADM_ID": "HADM_ID", 0: "Medical Info"})
-
-    out_df_ff = out_df_f.melt(id_vars="HADM_ID")
-    out_df_ff = out_df_ff.rename(columns={'variable': 'Entity', 'value': 'Value'})
-
-    out_df_f = pd.concat([out_df_ff, out_merg_f])
-    out_df_f.to_csv(list_case_attributes)
-
 
 
 def compare_case_attributes(Original_case_attr, case_att_csv):
@@ -228,8 +204,7 @@ if __name__ == '__main__':
     get_matched_events("semantic_similariy.csv", "matched_events.csv", "timestamp_updated_csv")
     add_new_events("matched_events.csv", "all_events.csv", "event_log.csv", "enhanced_log.csv")
     analyse_attr("Case_attributes.csv", "event_attributes.csv", "case_attr_analysis.csv", "event_attr_analysis.csv")
-    merge_attributes("Case_attributes.csv", "event_attributes.csv", "Case_attr_final.csv")
-    compare_case_attributes('case_attr_event_log.csv', "Case_attributes_final.csv")
+    compare_case_attributes('case_attr_event_log.csv', "Case_attributes_final_list.csv")
     convert_csv_xes('eventlog.csv', 'eventlog_xes')
 
 
